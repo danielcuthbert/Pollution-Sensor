@@ -22,6 +22,7 @@ now = datetime.now()
 while True:
     data = bme280.sample(bus, address, calibration_params)      
     #print(data.timestamp)
+    now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
     print("Hello, it's currently", current_time)
     print("The current temperature is %s C, the pressure is %s hPa, and the humidity is %s" % (round(data.temperature, 2), round(data.pressure, 2),  round(data.humidity, 2)))
