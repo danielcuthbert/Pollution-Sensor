@@ -1,6 +1,15 @@
+# Circuit Python 6.3.0
+# -*- coding: utf-8 -*-
+##################################################
 # Temp/Humidity and Pollution Sensor
-# Daniel Cuthbert
-# 2021 v1.0
+##################################################
+# MIT License Copyright (c) 2022 
+##################################################
+# Author: Daniel Cuthbert (@dcuthbert)
+# Version: 1.0
+##################################################
+
+
 
 import board
 import busio
@@ -13,20 +22,20 @@ from simpleio import map_range
 from adafruit_pm25.uart import PM25_UART
 from analogio import AnalogIn
 
-
-# We don't need to hammer Adafruit IO, so can get away with every 20 minutes
-PUBLISH_INTERVAL = 20
-
-
-### Wifi stuffs ###
-# We keep the secrets in secrets.py
+### Wifi & Configuration Stuffs ###
+# We keep a number of important secrets and configurations in a secrets.py file
 try:
     from secrets import secrets
 except ImportError:
     print("Oh dears, the setec astronomy file isn't there.")
     raise
 
-# This gets the AirLift FeatherWing up and running. We will be using SPI and UART
+# We don't need to hammer Adafruit IO, so can get away with every 10 minutes
+PUBLISH_INTERVAL = 10
+
+
+# This assumes you are using the AirLift FeatherWing. Change accordingly
+# We will be using SPI and UART
 esp32_cs = DigitalInOut(board.D13)
 esp32_reset = DigitalInOut(board.D12)
 esp32_ready = DigitalInOut(board.D11)
@@ -44,9 +53,9 @@ vbat_voltage = AnalogIn(board.VOLTAGE_MONITOR)
 def get_voltage(pin):
     return (pin.value * 3.3) / 65536 * 2
 battery_voltage = get_voltage(vbat_voltage)
-print("VBat voltage: {:.2f}".format(battery_voltage))
+print("Starting up the sensor and the battery voltage is: {:.2f}V".format(battery_voltage))
 
-# We are using the PM2.5 sensor over UART, so lets get that ready to sniff
+# We are using the PM2.5 sensor over UART, so lets get that ready to sample
 reset_pin = None
 uart = busio.UART(board.TX, board.RX, baudrate=9600)
 pm25 = PM25_UART(uart, reset_pin)
@@ -56,15 +65,10 @@ i2c = board.I2C()
 bme_sensor = adafruit_bme280.Adafruit_BME280_I2C(i2c)
 
 ### Sensor Functions ###
+# Returns a calculated air quality index (AQI) and category as a tuple (multiple items in a single variable)
+# We ideally need a 24-hour concentration average as if you don't, you'll have a higher AQI than you expect
 def calculate_aqi(pm_sensor_reading):
-    """Returns a calculated air quality index (AQI)
-    and category as a tuple.
-    NOTE: The AQI returned by this function should ideally be measured
-    using the 24-hour concentration average. Calculating a AQI without
-    averaging will result in higher AQI values than expected.
-    :param float pm_sensor_reading: Particulate matter sensor value.
 
-    """
     # Check sensor reading using EPA breakpoint (Clow-Chigh)
     if 0.0 <= pm_sensor_reading <= 12.0:
         # AQI calculation using EPA breakpoints (Ilow-IHigh)
@@ -95,10 +99,9 @@ def calculate_aqi(pm_sensor_reading):
     return aqi_val, aqi_cat
 
 
+# Let's take a sample from the PM2.5 sensor over a 2.3 second sample rate
 def sample_aq_sensor():
-    """Samples PM2.5 sensor
-    over a 2.3 second sample rate.
-    """
+
     aq_reading = 0
     aq_samples = []
     time_start = time.monotonic()
@@ -118,7 +121,7 @@ def sample_aq_sensor():
     aq_samples.clear()
     return aq_reading
 
-
+# Take a reading from the BME280 temp/pressure/humidity sensor 
 def read_bme():
 
     humid = bme_sensor.humidity
@@ -131,6 +134,7 @@ def read_bme():
 io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], wifi)
 
 # Once you've created your feeds, you need to list the names here
+# You can see all the feed addresses over at https://io.adafruit.com/USERNAME/feeds
 feed_aqi = io.get_feed("air-quality-sensor.aqi")
 feed_aqi_category = io.get_feed("air-quality-sensor.category")
 feed_humidity = io.get_feed("air-quality-sensor.humidity")
@@ -167,6 +171,7 @@ while True:
         elapsed_minutes += 1
 
     if elapsed_minutes >= PUBLISH_INTERVAL:
+        print("The current battery voltage is: {:.2f}".format(battery_voltage))
         print("Reading the PM25 sensor ...")
         aqi_reading = sample_aq_sensor()
         aqi, aqi_category = calculate_aqi(aqi_reading)
