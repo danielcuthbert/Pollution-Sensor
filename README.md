@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Air Quality Sensor
 
 This project is about building a cheap, but usable, air quality sensor for your house. It allows sampling and tracking of 2.5 micro particles (PM2.5) found in the air and takes that data and uploads it to Adafruits brilliant io.adafruit.com. 
@@ -95,8 +94,3 @@ Depending on the case you choose, you might need to cut down the USB cable to fi
 The more I play with this, the more I want to perform more analysis on the data being received. For example, I want push notifications when the AQI goes over a certain level. I've done this using IFTTT, which is amazing but I think you could do better. Then logging, right now all the data is pushed to Adafruit and stored for 30 days only. I can manually download it but I need to remind myself to do this so eventually I need to write some logging function to push it to a server I control for archiving. 
 
 You can add a battery and I have indeed done this myself and added the code to alert on the overall level of the battery but I feel it could be made better, so working on that. 
-=======
-#Simple IoT pollution sensor
-
-This is a relatively simple IoT pollution sensor. I shall update the readme in due course 
->>>>>>> 2da9bfb17a37cf54cfb84ad6b6b115ef799f0b3b
